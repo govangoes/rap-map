@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rap Map</title>
+<style>
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    color: #fff;
+    overflow-x: hidden;
+  }
+  .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    text-align: center;
+    padding: 0 20px;
+    animation: fadeIn 2s ease-in-out;
+  }
+  h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    letter-spacing: 2px;
+  }
+  p {
+    font-size: 1.2rem;
+    max-width: 800px;
+    margin-bottom: 2rem;
+    line-height: 1.5;
+  }
+  .cta-button {
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 50px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 1rem;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: background 0.3s ease;
+  }
+  .cta-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Rap Map</h1>
+    <p>Discover and explore the rich vocabulary of your favorite rappers. Rap Map visualizes and compares unique word usage, starting with legends like MF DOOM. Join our community to analyze your own lyrics and celebrate the art of rhyme.</p>
+    <button class="cta-button">Get Notified</button>
+  </div>
+  <!-- Future integration: this section will load dynamic app features once they're built -->
+  <script>
+    // Placeholder script for future app integration
+    document.querySelector('.cta-button').addEventListener('click', function() {
+      alert('Coming soon! Stay tuned for the full Rap Map experience.');
+    });
+  </script>
+  <!-- Copilot Prompt: Create a modern landing page with gradient background, smooth animations, professional typography, and strategic use of white space. Include a hero section introducing Rap Map and plan for future app integration. Use standard web technologies (HTML, CSS, JS). -->
+</body>
+</html>
