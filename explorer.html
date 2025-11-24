@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rap Map Explorer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f9f9f9;
+    }
+    h1 {
+      text-align: center;
+    }
+    .explorer {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    .artist-card {
+      border: 1px solid #ccc;
+      padding: 1rem;
+      border-radius: 8px;
+      background: #fff;
+    }
+    .bar {
+      height: 10px;
+      background: #4a90e2;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Rap Map Explorer</h1>
+  <div class="explorer" id="explorer"></div>
+  <script>
+    // Seeded artist data aligned with existing data model { name, uniqueWords }
+    const artists = [
+      { name: "MF DOOM", uniqueWords: 4760 },
+      { name: "Aesop Rock", uniqueWords: 7200 }
+    ];
+    function render() {
+      const container = document.getElementById('explorer');
+      container.innerHTML = '';
+      const max = Math.max(...artists.map(a => a.uniqueWords));
+      artists.forEach(a => {
+        const card = document.createElement('div');
+        card.className = 'artist-card';
+        const title = document.createElement('h3');
+        title.textContent = a.name;
+        const value = document.createElement('div');
+        value.textContent = a.uniqueWords + ' unique words';
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        bar.style.width = ((a.uniqueWords / max) * 100) + '%';
+        card.appendChild(title);
+        card.appendChild(value);
+        card.appendChild(bar);
+        container.appendChild(card);
+      });
+    }
+    render();
+  </script>
+</body>
+</html>
