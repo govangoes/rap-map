@@ -30,6 +30,7 @@ node tests/vocab.test.mjs
 - `index.html`, `assets/styles.css`, `assets/app.js`: the page and its wiring
 - `assets/engine.js`: phonetic engine (syllables, vowel classes, rhyme families); no DOM
 - `assets/vocab.js`: vocabulary stats; no DOM
-- `data/cmudict.json`: CMU Pronouncing Dictionary (public domain), ~120k words, loaded lazily. Words missing from it (slang, ad-libs) fall back to spelling rules in `engine.js`.
+- `data/cmudict.json`: CMU Pronouncing Dictionary (public domain), ~120k words, loaded lazily. Words missing from it fall back to the slang list, dialect rules, and finally spelling rules in `engine.js`.
+- `data/slang.json`: hand-written ARPAbet pronunciations for slang and spoken forms CMU lacks (finna, bruh, goated, th-stopped da/dat/dem...). Keys are lowercase letters only (apostrophes removed); phones use CMU symbols with stress digits. To add a word, add a line and run `node tests/engine.test.mjs`, which validates every entry. Lookup order: slang list, CMU, dialect rules (dropped g: runnin; -a for -er: killa, dolla; stretched spellings: yeahhh), spelling guess.
 
 Image export loads html2canvas from cdnjs on first click.
