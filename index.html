@@ -1,71 +1,153 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rap Map</title>
-<style>
-  body {
-    margin: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-    color: #fff;
-    overflow-x: hidden;
-  }
-  .container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    text-align: center;
-    padding: 0 20px;
-    animation: fadeIn 2s ease-in-out;
-  }
-  h1 {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    letter-spacing: 2px;
-  }
-  p {
-    font-size: 1.2rem;
-    max-width: 800px;
-    margin-bottom: 2rem;
-    line-height: 1.5;
-  }
-  .cta-button {
-    padding: 1rem 2rem;
-    border: none;
-    border-radius: 50px;
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-    font-size: 1rem;
-    cursor: pointer;
-    backdrop-filter: blur(10px);
-    transition: background 0.3s ease;
-  }
-  .cta-button:hover {
-    background: rgba(255, 255, 255, 0.3);
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rap Map: see the rhymes in your bars</title>
+  <meta name="description" content="Paste your lyrics and see every multisyllabic rhyme family color-coded, then check your vocabulary. Free, runs in your browser, nothing is uploaded.">
+  <meta name="theme-color" content="#0d0d0d">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Rap Map</h1>
-    <p>Discover and explore the rich vocabulary of your favorite rappers. Rap Map visualizes and compares unique word usage, starting with legends like MF DOOM. Join our community to analyze your own lyrics and celebrate the art of rhyme.</p>
-    <button class="cta-button">Get Notified</button>
-  </div>
-  <!-- Future integration: this section will load dynamic app features once they're built -->
-  <script>
-    // Placeholder script for future app integration
-    document.querySelector('.cta-button').addEventListener('click', function() {
-      alert('Coming soon! Stay tuned for the full Rap Map experience.');
-    });
-  </script>
-  <!-- Copilot Prompt: Create a modern landing page with gradient background, smooth animations, professional typography, and strategic use of white space. Include a hero section introducing Rap Map and plan for future app integration. Use standard web technologies (HTML, CSS, JS). -->
+  <a class="skip" href="#tool">Skip to the tool</a>
+
+  <header class="hero">
+    <div class="wrap">
+      <p class="eyebrow">Rap Map</p>
+      <h1>See the rhymes in your bars.</h1>
+      <p class="lede">
+        Paste a verse and every rhyme family lights up in its own color, including multisyllabic
+        and internal rhymes that cross word boundaries. Then check how big your vocabulary really is.
+      </p>
+      <p class="privacy">Free. Everything runs in your browser. Your lyrics are never uploaded or saved.</p>
+    </div>
+  </header>
+
+  <main class="wrap" id="tool">
+    <div class="tabs" role="tablist" aria-label="Tools">
+      <button type="button" role="tab" id="tab-bars" aria-controls="panel-bars" aria-selected="true">Bar Chart</button>
+      <button type="button" role="tab" id="tab-vocab" aria-controls="panel-vocab" aria-selected="false" tabindex="-1">Vocab Lab</button>
+    </div>
+
+    <!-- BAR CHART -->
+    <section id="panel-bars" role="tabpanel" aria-labelledby="tab-bars" class="panel">
+      <div class="row between">
+        <div class="seg" role="group" aria-label="Analysis mode">
+          <button type="button" id="modeMulti" aria-pressed="true">Multisyllabic</button>
+          <button type="button" id="modeEnd" aria-pressed="false">End rhyme (classic)</button>
+        </div>
+        <p id="dictStatus" class="status" role="status">Loading pronunciation dictionary&hellip;</p>
+      </div>
+
+      <label class="field-label" for="lyrics">Your bars</label>
+      <textarea id="lyrics" spellcheck="false" rows="6"></textarea>
+
+      <div class="card-frame">
+        <div id="card" class="card">
+          <div class="card-inner">
+            <div class="card-top">
+              <div class="card-brand">BAR CHART</div>
+              <div class="card-mode" id="cardModeLabel">MULTISYLLABIC</div>
+            </div>
+            <div class="card-lyrics" id="cardLyrics"></div>
+            <div class="card-legend" id="cardLegend"></div>
+            <div class="card-caption">
+              <input class="track" id="trackInput" placeholder="Track title (optional)" aria-label="Track title">
+              <input class="handle" id="handleInput" placeholder="@yourhandle" aria-label="Your handle">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row between">
+        <div class="row">
+          <select class="ctl" id="ratioSelect" aria-label="Image shape">
+            <option value="post">Post · 4:5</option>
+            <option value="square">Square · 1:1</option>
+            <option value="story">Story · 9:16</option>
+            <option value="wide">Wide · 16:9</option>
+          </select>
+          <select class="ctl" id="themeSelect" aria-label="Card theme">
+            <option value="dark">Dark card</option>
+            <option value="light">Light card</option>
+          </select>
+        </div>
+        <div class="row">
+          <button class="ghost" id="copyBtn" type="button">Copy plain text</button>
+          <button class="primary" id="saveBtn" type="button">Save image</button>
+        </div>
+      </div>
+      <p id="saveStatus" class="status" role="status"></p>
+
+      <details class="note">
+        <summary>How this reads rhymes</summary>
+        <p>
+          Every word is broken into syllables and each syllable&rsquo;s vowel sound is looked up in the
+          CMU Pronouncing Dictionary, the public-domain pronunciation list used in speech research.
+          Slang, ad-libs, and made-up words that aren&rsquo;t in it fall back to a spelling-based guess,
+          so check those by ear.
+        </p>
+        <p>
+          <strong>Multisyllabic</strong> mode slides a window of 2&ndash;4 syllables across each line and
+          colors any run of vowel sounds that repeats elsewhere in the verse, even across word
+          boundaries (<code>say yes</code> / <code>play test</code>). Three tiers: <em>italic</em> means only the
+          broad vowel family matched (a slant rhyme), plain color means the exact vowels matched, and
+          <strong>bold</strong> means the ending consonants matched too, the tightest rhyme.
+          <strong>End rhyme</strong> mode only looks at the last stressed syllable of each line and labels
+          them A/B/C like a rhyme scheme.
+        </p>
+      </details>
+    </section>
+
+    <!-- VOCAB LAB -->
+    <section id="panel-vocab" role="tabpanel" aria-labelledby="tab-vocab" class="panel" hidden>
+      <p class="panel-intro">
+        Paste your own lyrics to see how many different words you use. Add a second set to compare
+        two songs, two artists, or old you versus new you.
+      </p>
+      <div class="vocab-inputs">
+        <div>
+          <label class="field-label" for="vocabA">Lyrics A</label>
+          <textarea id="vocabA" spellcheck="false" rows="8" placeholder="Paste lyrics here"></textarea>
+        </div>
+        <div>
+          <label class="field-label" for="vocabB">Lyrics B (optional)</label>
+          <textarea id="vocabB" spellcheck="false" rows="8" placeholder="Paste a second set to compare"></textarea>
+        </div>
+      </div>
+      <div id="vocabResults" class="vocab-results" aria-live="polite"></div>
+      <details class="note">
+        <summary>How these numbers work</summary>
+        <p>
+          Words are lowercased and counted as written, so <code>run</code> and <code>running</code> count as
+          different words. <strong>Unique-word share</strong> is unique words divided by total words; it drops
+          as lyrics get longer, so use <strong>unique words in the first 1,000</strong> to compare sets of
+          different lengths (it needs at least 1,000 words). <strong>One-offs</strong> are words used exactly once.
+          The most-used list skips common filler like &ldquo;the&rdquo; and &ldquo;and&rdquo;.
+        </p>
+      </details>
+    </section>
+  </main>
+
+  <section class="wrap roadmap" aria-labelledby="roadmap-h">
+    <h2 id="roadmap-h">What&rsquo;s next</h2>
+    <p class="muted">Rap Map is early. Here is what exists and what is planned.</p>
+    <ul class="roadmap-list">
+      <li><span class="tag live">Live</span> Bar Chart rhyme visualizer with image export</li>
+      <li><span class="tag live">Live</span> Vocab Lab for your own lyrics</li>
+      <li><span class="tag soon">Planned</span> Audio upload with word-by-word synced playback</li>
+      <li><span class="tag soon">Planned</span> Artist vocabulary map (starting with MF DOOM, inspired by The Pudding&rsquo;s vocabulary analysis)</li>
+      <li><span class="tag soon">Planned</span> Accounts and saved projects for artists</li>
+    </ul>
+  </section>
+
+  <footer class="wrap foot">
+    <p>Rap Map by <a href="https://www.govangoes.com">GoVanGoes</a>. Pronunciations: CMU Pronouncing Dictionary (public domain).</p>
+  </footer>
+
+  <script type="module" src="assets/app.js"></script>
 </body>
 </html>
