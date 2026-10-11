@@ -179,7 +179,25 @@ $("saveBtn").addEventListener("click", async () => {
   flash("Rendering…", 0);
   try {
     const h2c = await loadHtml2Canvas();
-    const canvas = await h2c(card, { backgroundColor: null, scale: 2, useCORS: true });
+    const canvas = await h2c(card, {
+      backgroundColor: null,
+      scale: 2,
+      useCORS: true,
+      // Inputs render poorly (clipped text, visible placeholders), so the exported copy
+      // swaps them for plain text and drops any that are empty.
+      onclone: (doc) => {
+        doc.querySelectorAll("#card .card-caption input").forEach((input) => {
+          if (!input.value.trim()) {
+            input.remove();
+            return;
+          }
+          const span = doc.createElement("span");
+          span.className = input.className;
+          span.textContent = input.value;
+          input.replaceWith(span);
+        });
+      },
+    });
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
     if (!blob) throw new Error("no blob");
     const url = URL.createObjectURL(blob);
