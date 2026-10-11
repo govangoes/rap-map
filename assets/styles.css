@@ -143,7 +143,8 @@ textarea::placeholder { color: var(--muted); }
   font-family: "IBM Plex Mono", monospace; font-size: 11px; width: 100%;
 }
 .card-caption input::placeholder { color: inherit; opacity: 0.45; }
-.card-caption .handle { text-align: right; }
+.card-caption span { font-family: "IBM Plex Mono", monospace; font-size: 11px; }
+.card-caption .handle { text-align: right; margin-left: auto; }
 
 select.ctl {
   font: 600 13px "Manrope", sans-serif; color: var(--ink); background: var(--surface);

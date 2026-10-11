@@ -1,4 +1,4 @@
-import { setDictionary, dictionarySize, findFamilies } from "./engine.js";
+import { setDictionary, setSlang, slangSize, dictionarySize, findFamilies } from "./engine.js";
 import { analyzeVocabulary } from "./vocab.js";
 
 const $ = (id) => document.getElementById(id);
@@ -179,7 +179,25 @@ $("saveBtn").addEventListener("click", async () => {
   flash("Rendering…", 0);
   try {
     const h2c = await loadHtml2Canvas();
-    const canvas = await h2c(card, { backgroundColor: null, scale: 2, useCORS: true });
+    const canvas = await h2c(card, {
+      backgroundColor: null,
+      scale: 2,
+      useCORS: true,
+      // Inputs render poorly (clipped text, visible placeholders), so the exported copy
+      // swaps them for plain text and drops any that are empty.
+      onclone: (doc) => {
+        doc.querySelectorAll("#card .card-caption input").forEach((input) => {
+          if (!input.value.trim()) {
+            input.remove();
+            return;
+          }
+          const span = doc.createElement("span");
+          span.className = input.className;
+          span.textContent = input.value;
+          input.replaceWith(span);
+        });
+      },
+    });
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
     if (!blob) throw new Error("no blob");
     const url = URL.createObjectURL(blob);
@@ -260,14 +278,21 @@ renderVocab();
 renderCard(); // works immediately with spelling rules, improves once the dictionary arrives
 selectTab(location.hash === "#vocab" ? tabs[1] : tabs[0], { updateHash: false });
 
+// Slang list is small and optional: if it fails to load, the rest still works.
+const slangReady = fetch("data/slang.json")
+  .then((r) => (r.ok ? r.json() : {}))
+  .then((map) => setSlang(map))
+  .catch(() => {});
+
 fetch("data/cmudict.json")
   .then((r) => {
     if (!r.ok) throw new Error(String(r.status));
     return r.json();
   })
-  .then((dict) => {
+  .then(async (dict) => {
     setDictionary(dict);
-    $("dictStatus").textContent = `Dictionary loaded (${dictionarySize().toLocaleString()} words).`;
+    await slangReady;
+    $("dictStatus").textContent = `Dictionary loaded (${dictionarySize().toLocaleString()} words + ${slangSize()} slang).`;
     renderCard();
   })
   .catch(() => {
