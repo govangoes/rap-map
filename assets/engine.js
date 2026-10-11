@@ -5,6 +5,11 @@
 
 let CMUDICT = {};
 export function setDictionary(dict) { CMUDICT = dict || {}; }
+// Hand-written pronunciations for slang and spoken forms the CMU dictionary lacks
+// (finna, bruh, goated...). Keys are lowercase with apostrophes removed. Checked first.
+let SLANG = {};
+export function setSlang(map) { SLANG = map || {}; }
+export function slangSize() { return Object.keys(SLANG).length; }
 export function dictionarySize() { return Object.keys(CMUDICT).length; }
 
 const VOWELS = new Set(['a','e','i','o','u']);
@@ -202,30 +207,85 @@ function codaClass(word, syl){
   if('fvszx'.includes(c0)) return 'FRIC';
   return 'OTHER';
 }
+// Spoken-English rules for words that are in neither list. Each tries to reach a
+// known word's pronunciation, so it only fires when the target really exists.
+function collapseRepeats(w){ return w.replace(/(.)\1{2,}/g, '$1'); } // yeahhhh -> yeah
+function swapLastPhone(phones, from, to){
+  const parts = phones.split(' ');
+  const last = parts[parts.length-1];
+  if(!from.test(last)) return null;
+  parts[parts.length-1] = to(last);
+  return parts.join(' ');
+}
+function lookupPronunciation(word){
+  const forms = [word];
+  const squeezed = collapseRepeats(word);
+  if(squeezed !== word) forms.push(squeezed);
+  for(const w of forms){
+    if(SLANG[w]) return {phones:SLANG[w], source:'slang'};
+    if(CMUDICT[w]) return {phones:CMUDICT[w], source:'cmu'};
+  }
+  for(const w of forms){
+    // Dropped g: runnin -> running, with the final NG read as N.
+    if(w.length > 3 && w.endsWith('in') && CMUDICT[w+'g']){
+      const ph = swapLastPhone(CMUDICT[w+'g'], /^NG$/, () => 'N');
+      if(ph) return {phones:ph, source:'rule'};
+    }
+    // Non-rhotic -a / -ah for -er/-ar/-or: killa, dolla, brotha, sista.
+    for(const suffix of ['ah','a']){
+      if(w.length > suffix.length + 2 && w.endsWith(suffix)){
+        for(const ending of ['er','ar','or']){
+          const base = w.slice(0, -suffix.length) + ending;
+          const known = CMUDICT[base] || SLANG[base];
+          const ph = known && swapLastPhone(known, /^ER[0-2]$/, (p) => 'AH' + p.slice(2));
+          if(ph) return {phones:ph, source:'rule'};
+        }
+      }
+    }
+  }
+  return null;
+}
+// Spread syllables over a word's letters when the pronunciation and the spelling
+// disagree on how many syllables there are (slang spellings often do).
+function spreadSyllables(word, cmuSyls){
+  const n = cmuSyls.length, len = word.length;
+  return cmuSyls.map((c,k) => {
+    let start = Math.round(k*len/n), end = Math.round((k+1)*len/n);
+    if(start >= len) start = len-1;
+    if(end <= start) end = start+1;
+    return {
+      start, end, nucleusStart:start, nucleusEnd:end, openSyllable:false, magicE:false, noVowel:false,
+      vowel:c.vowel, coda:cmuCodaClass(c.codaPhones), stress:c.stress,
+    };
+  });
+}
 function analyzeWord(rawWord){
   const word = rawWord.toLowerCase();
   const orthoSyls = syllabify(word);
-  const dictEntry = CMUDICT[word];
-  if(dictEntry && !orthoSyls[0].noVowel){
-    const cmuSyls = phonesToCmuSyllables(dictEntry);
-    if(cmuSyls && cmuSyls.length === orthoSyls.length){
-      // Real dictionary phonemes, positioned at the spelling-based char ranges.
-      return orthoSyls.map((s,k) => ({
-        ...s,
-        vowel: cmuSyls[k].vowel,
-        coda: cmuCodaClass(cmuSyls[k].codaPhones),
-        stress: cmuSyls[k].stress,
-      }));
+  const found = lookupPronunciation(word);
+  if(found){
+    const cmuSyls = phonesToCmuSyllables(found.phones);
+    if(cmuSyls){
+      if(!orthoSyls[0].noVowel && cmuSyls.length === orthoSyls.length){
+        // Real pronunciation, positioned at the spelling-based char ranges.
+        return orthoSyls.map((s,k) => ({
+          ...s,
+          vowel: cmuSyls[k].vowel,
+          coda: cmuCodaClass(cmuSyls[k].codaPhones),
+          stress: cmuSyls[k].stress,
+        }));
+      }
+      if(found.source !== 'cmu') return spreadSyllables(word, cmuSyls);
     }
   }
-  // Out-of-dictionary word (slang, ad-libs, proper nouns) or a rare syllable-count
-  // mismatch between spelling and pronunciation — fall back to the rule-based guess.
+  // Out-of-dictionary word (ad-libs, proper nouns) or a rare syllable-count
+  // mismatch between spelling and a CMU pronunciation: fall back to the spelling guess.
   return orthoSyls.map(s => ({...s, vowel: classifyVowel(word,s), coda: codaClass(word,s)}));
 }
 
 /* ---------------- Line tokenizing + matching ---------------- */
 function tokenizeLine(line){
-  const tokens=[]; const re=/[a-zA-Z']+|[^a-zA-Z']+/g; let m;
+  const tokens=[]; const re=/[a-zA-Z'’]+|[^a-zA-Z'’]+/g; let m;
   while((m=re.exec(line))){ tokens.push({text:m[0],start:m.index,end:m.index+m[0].length,isWord:/[a-zA-Z]/.test(m[0])}); }
   return tokens;
 }
@@ -234,12 +294,14 @@ function flattenLine(line){
   let wordIdx=0;
   for(const tok of tokens){
     if(!tok.isWord) continue;
-    const clean = tok.text.replace(/'/g,'');
+    const clean = tok.text.replace(/['’]/g,'');
     if(!clean) continue;
+    // Map letters of the apostrophe-free word back to positions in the original text.
+    const at = []; [...tok.text].forEach((ch,i) => { if(ch !== "'" && ch !== '’') at.push(i); });
     const syls = analyzeWord(clean).filter(s=>!s.noVowel && s.vowel);
     syls.forEach((s,i) => {
       flat.push({
-        absStart:tok.start+s.start, absEnd:tok.start+s.end, vowel:s.vowel, coda:s.coda,
+        absStart:tok.start+at[s.start], absEnd:tok.start+at[s.end-1]+1, vowel:s.vowel, coda:s.coda,
         wordIdx, firstOfWord: i===0, lastOfWord: i===syls.length-1,
       });
     });
@@ -347,4 +409,4 @@ function findFamilies(text, opts){
   return {lines:lineClaims, families};
 }
 
-export { analyzeWord, findFamilies, flattenLine, tokenizeLine, syllabify };
+export { analyzeWord, lookupPronunciation, findFamilies, flattenLine, tokenizeLine, syllabify };

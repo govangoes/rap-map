@@ -1,4 +1,4 @@
-import { setDictionary, dictionarySize, findFamilies } from "./engine.js";
+import { setDictionary, setSlang, slangSize, dictionarySize, findFamilies } from "./engine.js";
 import { analyzeVocabulary } from "./vocab.js";
 
 const $ = (id) => document.getElementById(id);
@@ -260,14 +260,21 @@ renderVocab();
 renderCard(); // works immediately with spelling rules, improves once the dictionary arrives
 selectTab(location.hash === "#vocab" ? tabs[1] : tabs[0], { updateHash: false });
 
+// Slang list is small and optional: if it fails to load, the rest still works.
+const slangReady = fetch("data/slang.json")
+  .then((r) => (r.ok ? r.json() : {}))
+  .then((map) => setSlang(map))
+  .catch(() => {});
+
 fetch("data/cmudict.json")
   .then((r) => {
     if (!r.ok) throw new Error(String(r.status));
     return r.json();
   })
-  .then((dict) => {
+  .then(async (dict) => {
     setDictionary(dict);
-    $("dictStatus").textContent = `Dictionary loaded (${dictionarySize().toLocaleString()} words).`;
+    await slangReady;
+    $("dictStatus").textContent = `Dictionary loaded (${dictionarySize().toLocaleString()} words + ${slangSize()} slang).`;
     renderCard();
   })
   .catch(() => {
